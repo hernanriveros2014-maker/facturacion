@@ -1,71 +1,65 @@
 # Despliegue en VPS — Facturación
 
-Scripts y configuración para levantar el sitio en Ubuntu (VPS).
+Misma arquitectura que turismo-desarrollo: Nginx + Gunicorn + PostgreSQL + systemd.
 
 ## Requisitos
 
-- Ubuntu 22.04 / 24.04 con acceso root (SSH)
-- Dominio apuntando a la IP (opcional al inicio)
-- Código del proyecto en la VPS
+- Ubuntu 22.04 / 24.04 con SSH root
+- Dominio apuntando a la IP (recomendado para SSL)
+- Repo: https://github.com/hernanriveros2014-maker/facturacion
 
-## 1. Subir el proyecto
-
-**Opción A — Git**
+## Instalación inicial (VPS)
 
 ```bash
-sudo mkdir -p /var/www
+ssh root@IP_DE_TU_VPS
+
 sudo git clone https://github.com/hernanriveros2014-maker/facturacion.git /var/www/facturacion
-```
-
-**Opción B — Copiar desde tu PC (PowerShell)**
-
-```powershell
-scp -r C:\Facturacion root@IP_VPS:/var/www/facturacion
-```
-
-## 2. Configurar variables
-
-```bash
-cp /var/www/facturacion/deploy/env.production.example /var/www/facturacion/backend/.env
-nano /var/www/facturacion/backend/.env
-```
-
-Completa al menos:
-
-- `SECRET_KEY` (clave larga aleatoria)
-- `ALLOWED_HOSTS`, `CSRF_TRUSTED_ORIGINS`, `CORS_ALLOWED_ORIGINS`
-- `DB_PASSWORD`
-- `VITE_API_URL` (ej. `https://tudominio.cl`)
-
-## 3. Instalación inicial
-
-Con dominio y SSL:
-
-```bash
 cd /var/www/facturacion
-sudo DOMAIN=tudominio.cl ENABLE_SSL=1 SSL_EMAIL=admin@tudominio.cl bash deploy/bootstrap-vps.sh
-```
 
-Solo con IP (pruebas):
+# Editar SECRET_KEY y DB antes de arrancar
+cp deploy/env.production.example backend/.env
+nano backend/.env
 
-```bash
+# Con dominio + SSL
+sudo DOMAIN=facturacion.tudominio.cl ENABLE_SSL=1 SSL_EMAIL=admin@tudominio.cl bash deploy/bootstrap-vps.sh
+
+# Solo IP (pruebas)
 sudo DOMAIN=203.0.113.10 bash deploy/bootstrap-vps.sh
 ```
 
-## 4. Verificar
+## Verificar
 
 ```bash
 systemctl status facturacion-gunicorn nginx postgresql
-curl -I http://tudominio.cl/api/health/
+curl -I http://TU_DOMINIO/api/health/
 ```
 
-## Estructura (igual que turismo-desarrollo)
+## Actualizar después de cambios
 
+En tu PC: `git push origin main`
+
+En la VPS:
+
+```bash
+cd /var/www/facturacion
+git pull origin main
+sudo bash deploy/update-app.sh
 ```
-facturacion/
-├── backend/          # Django + DRF
-├── frontend/         # React + Vite
-├── deploy/           # Scripts VPS
-├── nginx/            # Config dev (docker-compose)
-└── docker-compose.dev.yml
-```
+
+## Convivencia con turismo en la misma VPS
+
+| Proyecto    | Ruta                  | Gunicorn   | Nginx site     |
+|-------------|-----------------------|------------|----------------|
+| Turismo     | `/var/www/turismo`    | `:8000`    | `turismo`      |
+| Facturación | `/var/www/facturacion`| `:8001`    | `facturacion`  |
+
+Cada uno con su propio dominio en Nginx.
+
+## Archivos clave
+
+- `bootstrap-vps.sh` — instalación completa
+- `update-app.sh` — actualizar código en producción
+- `nginx/facturacion*.conf` — configuración Nginx
+- `systemd/facturacion-gunicorn.service` — servicio backend
+
+Ver también: `subir-cambios-vps.txt`

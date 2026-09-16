@@ -1,0 +1,21 @@
+[Unit]
+Description=Facturacion Gunicorn
+After=network.target postgresql.service
+Wants=postgresql.service
+
+[Service]
+User=www-data
+Group=www-data
+WorkingDirectory=__APP_ROOT__/backend
+EnvironmentFile=__APP_ROOT__/backend/.env
+ExecStart=__APP_ROOT__/venv/bin/gunicorn facturacion.wsgi:application \
+  --bind 127.0.0.1:__GUNICORN_PORT__ \
+  --workers 3 \
+  --timeout 120 \
+  --access-logfile - \
+  --error-logfile -
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,54 @@
+================================================================================
+  DEPLOY VPS — Facturación
+  Orden: commit/push → VPS: git pull → update-app.sh
+================================================================================
+
+PASO 0 — Git en PC
+--------------------------------------------------------------------------------
+cd C:\Facturacion
+git add .
+git commit -m "descripcion del cambio"
+git push origin main
+
+
+PASO 1 — Conectar a la VPS por SSH
+--------------------------------------------------------------------------------
+ssh root@IP_DE_TU_VPS
+
+
+PASO 2 — Instalación inicial (solo la primera vez)
+--------------------------------------------------------------------------------
+sudo mkdir -p /var/www
+sudo git clone https://github.com/hernanriveros2014-maker/facturacion.git /var/www/facturacion
+cd /var/www/facturacion
+
+# Generar SECRET_KEY en backend/.env antes de arrancar:
+python3 -c "from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())"
+
+cp deploy/env.production.example backend/.env
+nano backend/.env
+
+# Con dominio + SSL:
+sudo DOMAIN=facturacion.tudominio.cl ENABLE_SSL=1 SSL_EMAIL=tu@mail.cl bash deploy/bootstrap-vps.sh
+
+# Solo con IP (pruebas):
+sudo DOMAIN=203.0.113.10 bash deploy/bootstrap-vps.sh
+
+
+PASO 3 — Actualizar después de cambios (producción)
+--------------------------------------------------------------------------------
+cd /var/www/facturacion
+git pull origin main
+sudo bash deploy/update-app.sh
+
+
+Verificación
+--------------------------------------------------------------------------------
+curl -I http://TU_DOMINIO/api/health/
+systemctl status facturacion-gunicorn nginx postgresql
+
+
+Nota — misma VPS que turismo
+--------------------------------------------------------------------------------
+Turismo usa Gunicorn en puerto 8000. Facturación usa 8001 por defecto
+(variable GUNICORN_PORT) para que ambos convivan en la misma VPS.
