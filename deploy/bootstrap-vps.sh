@@ -177,10 +177,16 @@ configure_nginx() {
       > /etc/nginx/sites-available/facturacion
   fi
   ln -sf /etc/nginx/sites-available/facturacion /etc/nginx/sites-enabled/facturacion
-  rm -f /etc/nginx/sites-enabled/default
+  if [[ "${COEXIST_TURISMO:-}" != "1" ]]; then
+    rm -f /etc/nginx/sites-enabled/default
+  fi
   nginx -t
   systemctl enable nginx
-  systemctl restart nginx
+  if [[ "${COEXIST_TURISMO:-}" == "1" ]]; then
+    systemctl reload nginx
+  else
+    systemctl restart nginx
+  fi
 }
 
 configure_systemd() {

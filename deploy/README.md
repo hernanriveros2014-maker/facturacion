@@ -46,6 +46,19 @@ git pull origin main
 sudo bash deploy/update-app.sh
 ```
 
+## Instalar junto a ArriendaVIP (sin impacto)
+
+Usa el script sidecar — **no toca turismo**:
+
+```bash
+sudo DOMAIN=facturacion.arriendavip.cl ENABLE_SSL=1 SSL_EMAIL=admin@arriendavip.cl \
+  bash deploy/install-sidecar-vps.sh
+```
+
+Guía completa: `deploy/instalar-junto-arriendavip.txt`
+
+Requisito previo: DNS `facturacion.arriendavip.cl` → misma IP de la VPS.
+
 ## Convivencia con turismo en la misma VPS
 
 | Proyecto    | Ruta                  | Gunicorn   | Nginx site     |

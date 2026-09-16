@@ -1,0 +1,84 @@
+================================================================================
+  INSTALAR FACTURACIÓN en la MISMA VPS que ArriendaVIP — SIN IMPACTO
+================================================================================
+
+PRINCIPIO: todo separado. No se toca turismo-gunicorn, nginx/turismo ni turismo1.
+
+  | Recurso        | ArriendaVIP (turismo)     | Facturación (nuevo)              |
+  |----------------|---------------------------|----------------------------------|
+  | Carpeta        | /var/www/turismo          | /var/www/facturacion             |
+  | Gunicorn       | 127.0.0.1:8000            | 127.0.0.1:8001                   |
+  | PostgreSQL     | turismo1                  | facturacion1                     |
+  | Nginx          | sites-enabled/turismo     | sites-enabled/facturacion        |
+  | Dominio        | arriendavip.cl            | facturacion.arriendavip.cl       |
+
+================================================================================
+PASO 1 — DNS (Cloudflare o tu proveedor)
+================================================================================
+
+Crear registro A (o CNAME):
+
+  Nombre:  facturacion
+  Valor:   misma IP de la VPS que usa arriendavip.cl
+  Proxy:   opcional (naranja Cloudflare OK)
+
+No modificar registros de arriendavip.cl ni www.
+
+================================================================================
+PASO 2 — Subir código a GitHub (desde tu PC)
+================================================================================
+
+cd C:\Facturacion
+git push origin main
+
+================================================================================
+PASO 3 — Instalar en VPS (SSH)
+================================================================================
+
+ssh root@IP_VPS
+
+cd /var/www/facturacion 2>/dev/null || true
+
+# Si es la primera vez, clonar y ejecutar script sidecar:
+git clone https://github.com/hernanriveros2014-maker/facturacion.git /var/www/facturacion
+cd /var/www/facturacion
+git pull origin main
+
+sudo DOMAIN=facturacion.arriendavip.cl \
+     ENABLE_SSL=1 \
+     SSL_EMAIL=admin@arriendavip.cl \
+     bash deploy/install-sidecar-vps.sh
+
+# Si aún no propagó DNS, instalar sin SSL primero:
+# sudo DOMAIN=facturacion.arriendavip.cl bash deploy/install-sidecar-vps.sh
+# Luego, cuando DNS esté listo:
+# sudo DOMAIN=facturacion.arriendavip.cl ENABLE_SSL=1 SSL_EMAIL=... bash deploy/install-sidecar-vps.sh
+
+================================================================================
+PASO 4 — Verificar que ArriendaVIP NO se afectó
+================================================================================
+
+curl -sI https://arriendavip.cl/ | head -3
+systemctl status turismo-gunicorn    # debe estar active (running)
+curl -s https://facturacion.arriendavip.cl/api/health/
+
+================================================================================
+PASO 5 — Actualizaciones futuras (solo facturación)
+================================================================================
+
+cd /var/www/facturacion
+git pull origin main
+sudo bash deploy/update-app.sh
+
+(Nunca ejecutar update-app.sh de turismo para facturación ni al revés.)
+
+================================================================================
+QUÉ NO HACER (evita impacto en producción)
+================================================================================
+
+  x No usar DOMAIN=arriendavip.cl
+  x No cambiar puerto 8000
+  x No modificar /etc/nginx/sites-available/turismo
+  x No usar bootstrap-vps.sh completo (instala paquetes y reinicia nginx agresivo)
+  x No compartir backend/.env entre proyectos
+  x No usar la BD turismo1 para facturacion
