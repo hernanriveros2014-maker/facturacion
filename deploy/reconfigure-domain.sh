@@ -23,9 +23,9 @@ fi
 
 log "Actualizando backend/.env..."
 ENV_FILE="$APP_ROOT/backend/.env"
-sed -i "s/^ALLOWED_HOSTS=.*/ALLOWED_HOSTS=${DOMAIN},www.${DOMAIN}/" "$ENV_FILE"
-sed -i "s|^CSRF_TRUSTED_ORIGINS=.*|CSRF_TRUSTED_ORIGINS=https://${DOMAIN},https://www.${DOMAIN}|" "$ENV_FILE"
-sed -i "s|^CORS_ALLOWED_ORIGINS=.*|CORS_ALLOWED_ORIGINS=https://${DOMAIN},https://www.${DOMAIN}|" "$ENV_FILE"
+sed -i "s/^ALLOWED_HOSTS=.*/ALLOWED_HOSTS=${DOMAIN}/" "$ENV_FILE"
+sed -i "s|^CSRF_TRUSTED_ORIGINS=.*|CSRF_TRUSTED_ORIGINS=https://${DOMAIN}|" "$ENV_FILE"
+sed -i "s|^CORS_ALLOWED_ORIGINS=.*|CORS_ALLOWED_ORIGINS=https://${DOMAIN}|" "$ENV_FILE"
 grep -q '^VITE_API_URL=' "$ENV_FILE" && \
   sed -i "s|^VITE_API_URL=.*|VITE_API_URL=https://${DOMAIN}|" "$ENV_FILE" || \
   echo "VITE_API_URL=https://${DOMAIN}" >> "$ENV_FILE"

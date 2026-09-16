@@ -1,0 +1,69 @@
+================================================================================
+  QA Facturación — qa.facturacion.sinfon-ia.cl
+  Misma VPS que ArriendaVIP, SIN impacto en turismo ni sinfon-ia.cl
+================================================================================
+
+DOMINIO: qa.facturacion.sinfon-ia.cl
+  ✓ No interfiere con arriendavip.cl
+  ✓ No interfiere con sinfon-ia.cl / www.sinfon-ia.cl (turismo white-label)
+  ✓ Facturación en puerto 8001, BD facturacion1
+
+================================================================================
+CLOUDFLARE — zona sinfon-ia.cl → DNS → Registros
+================================================================================
+
+Crear UN registro (no borrar los de sinfon-ia.cl / www):
+
+  Tipo:     A
+  Nombre:   qa.facturacion
+  Contenido: IP de la VPS (la misma que arriendavip.cl)
+  Proxy:    Proxied (naranja) — recomendado
+  TTL:      Auto
+
+Resultado: qa.facturacion.sinfon-ia.cl → VPS
+
+SSL/TLS (zona sinfon-ia.cl): Full o Full (strict)
+
+No crear CNAME a qa.arriendavip.cl.
+
+================================================================================
+VPS — primera vez (ya instalado sidecar) o reconfigurar dominio
+================================================================================
+
+cd /var/www/facturacion
+git pull origin main
+
+sudo DOMAIN=qa.facturacion.sinfon-ia.cl \
+     SSL_EMAIL=admin@sinfon-ia.cl \
+     bash deploy/reconfigure-domain.sh
+
+Instalación nueva desde cero:
+
+sudo DOMAIN=qa.facturacion.sinfon-ia.cl \
+     ENABLE_SSL=1 \
+     SSL_EMAIL=admin@sinfon-ia.cl \
+     bash deploy/install-sidecar-vps.sh
+
+================================================================================
+VERIFICAR
+================================================================================
+
+dig +short qa.facturacion.sinfon-ia.cl
+curl -s https://qa.facturacion.sinfon-ia.cl/api/health/
+curl -sI https://arriendavip.cl/ | head -3
+curl -sI https://www.sinfon-ia.cl/ | head -3
+systemctl status turismo-gunicorn facturacion-gunicorn
+
+Navegador: https://qa.facturacion.sinfon-ia.cl/
+
+================================================================================
+backend/.env (referencia)
+================================================================================
+
+ALLOWED_HOSTS=qa.facturacion.sinfon-ia.cl
+CSRF_TRUSTED_ORIGINS=https://qa.facturacion.sinfon-ia.cl
+CORS_ALLOWED_ORIGINS=https://qa.facturacion.sinfon-ia.cl
+VITE_API_URL=https://qa.facturacion.sinfon-ia.cl
+FRONTEND_BASE_URL=https://qa.facturacion.sinfon-ia.cl
+
+(reconfigure-domain.sh lo escribe automáticamente)
