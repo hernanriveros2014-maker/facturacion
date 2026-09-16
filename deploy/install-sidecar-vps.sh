@@ -47,8 +47,16 @@ preflight() {
   fi
 
   if [[ "$DOMAIN" == "arriendavip.cl" || "$DOMAIN" == "www.arriendavip.cl" ]]; then
-    echo "Usa un subdominio (ej. facturacion.arriendavip.cl) para no interferir con ArriendaVIP."
+    echo "Usa otro dominio (ej. sinfon-ia.cl) para no interferir con ArriendaVIP."
     exit 1
+  fi
+
+  if [[ "$DOMAIN" == "sinfon-ia.cl" || "$DOMAIN" == "www.sinfon-ia.cl" ]]; then
+    if [[ -L /etc/nginx/sites-enabled/turismo-white-label ]]; then
+      log "AVISO: sinfon-ia.cl hoy sirve turismo white-label."
+      log "Se deshabilitará turismo-white-label al finalizar (arriendavip.cl no cambia)."
+      REMOVE_WL=1
+    fi
   fi
 }
 
@@ -112,12 +120,11 @@ ensure_env() {
   grep -q "^DB_PASSWORD=${DB_PASSWORD}$" "$APP_ROOT/backend/.env" 2>/dev/null || \
     sed -i "s/^DB_PASSWORD=.*/DB_PASSWORD=${DB_PASSWORD}/" "$APP_ROOT/backend/.env"
 
-  if grep -q "REEMPLAZAR_CON_CLAVE" "$APP_ROOT/backend/.env"; then
+  if grep -qE "REEMPLAZAR_CON_CLAVE|^SECRET_KEY=$" "$APP_ROOT/backend/.env"; then
     local sk
-    sk="$("$APP_ROOT/venv/bin/python" -c "from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())" 2>/dev/null || true)"
-    if [[ -n "$sk" ]]; then
-      sed -i "s/SECRET_KEY=.*/SECRET_KEY=${sk}/" "$APP_ROOT/backend/.env"
-    fi
+    sk="$("$APP_ROOT/venv/bin/python" -c "from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())")"
+    sed -i "s/^SECRET_KEY=.*/SECRET_KEY=${sk}/" "$APP_ROOT/backend/.env"
+    log "SECRET_KEY generada en backend/.env"
   fi
 
   log "Revisa $APP_ROOT/backend/.env si necesitas correo u Odoo."
@@ -146,7 +153,12 @@ build_and_migrate() {
 }
 
 configure_nginx_sidecar() {
-  log "Agregando sitio nginx/facturacion (sin tocar turismo)..."
+  if [[ "${REMOVE_WL:-}" == "1" && -L /etc/nginx/sites-enabled/turismo-white-label ]]; then
+    log "Deshabilitando turismo-white-label (sinfon-ia.cl pasa a facturación)..."
+    rm -f /etc/nginx/sites-enabled/turismo-white-label
+  fi
+
+  log "Agregando sitio nginx/facturacion (sin tocar turismo/arriendavip)..."
   local tpl="$APP_ROOT/deploy/nginx/facturacion.conf"
   if [[ -f "/etc/letsencrypt/live/${DOMAIN}/fullchain.pem" ]]; then
     tpl="$APP_ROOT/deploy/nginx/facturacion-production.conf"

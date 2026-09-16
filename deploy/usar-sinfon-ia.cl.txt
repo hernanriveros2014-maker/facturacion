@@ -1,0 +1,56 @@
+================================================================================
+  Usar sinfon-ia.cl para Facturación (misma VPS que ArriendaVIP)
+================================================================================
+
+IMPORTANTE — conflicto actual
+--------------------------------------------------------------------------------
+Hoy sinfon-ia.cl / www.sinfon-ia.cl están configurados como white-label de
+TURISMO (portal BeVYuTByMK vía nginx turismo-white-label → puerto 8000).
+
+Si pasas sinfon-ia.cl a Facturación:
+  ✓ Facturación quedará en https://sinfon-ia.cl/
+  ✓ ArriendaVIP (arriendavip.cl) NO se modifica
+  ✗ El portal turismo en sinfon-ia.cl dejará de funcionar en ese dominio
+
+================================================================================
+PASO 1 — DNS (Cloudflare u otro)
+================================================================================
+
+Apunta sinfon-ia.cl a la IP de la VPS (no CNAME a qa.arriendavip.cl):
+
+  Tipo A    @      → IP_VPS
+  Tipo A    www    → IP_VPS   (o CNAME www → sinfon-ia.cl)
+
+SSL Cloudflare: Full o Full (strict)
+
+================================================================================
+PASO 2 — En la VPS (SSH)
+================================================================================
+
+cd /var/www/facturacion
+git pull origin main
+
+sudo DOMAIN=sinfon-ia.cl \
+     SSL_EMAIL=admin@sinfon-ia.cl \
+     bash deploy/reconfigure-domain.sh
+
+================================================================================
+PASO 3 — Verificar
+================================================================================
+
+curl -s https://sinfon-ia.cl/api/health/
+curl -sI https://arriendavip.cl/ | head -3
+systemctl status turismo-gunicorn facturacion-gunicorn
+
+Navegador: https://sinfon-ia.cl/
+
+================================================================================
+Instalación nueva desde cero con sinfon-ia.cl
+================================================================================
+
+sudo DOMAIN=sinfon-ia.cl \
+     ENABLE_SSL=1 \
+     SSL_EMAIL=admin@sinfon-ia.cl \
+     bash deploy/install-sidecar-vps.sh
+
+(Luego ejecutar reconfigure-domain.sh si hace falta quitar white-label turismo)
