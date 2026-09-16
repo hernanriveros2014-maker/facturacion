@@ -1,0 +1,72 @@
+# ============================================================
+# Secretos — nunca en el repositorio
+# ============================================================
+backend/.env
+.env
+.env.*
+!.env.example
+!**/.env.example
+!frontend/.env.production
+frontend/.env.local
+frontend/.env.*.local
+
+# Folios CAF del SII — material tributario, nunca versionar
+CAF/
+
+# Informes de seguridad locales
+.gstack/
+
+# ============================================================
+# Python / Django
+# ============================================================
+env/
+venv/
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.pyc
+*.egg-info/
+*.sqlite3
+db.sqlite3
+
+# ============================================================
+# Node / Frontend
+# ============================================================
+frontend/node_modules/
+node_modules/
+!frontend/dist/
+
+# ============================================================
+# Archivos de media (documentos subidos por usuarios)
+# ============================================================
+backend/Media/
+media/
+
+# ============================================================
+# Archivos Windows innecesarios
+# ============================================================
+*.lnk
+*.zip
+desktop.ini
+
+# ============================================================
+# Logs y temporales
+# ============================================================
+*.log
+*.tmp
+*.bak
+*.backup
+*.dump
+*.sql.gz
+*.swp
+.DS_Store
+Thumbs.db
+
+# ============================================================
+# IDE / Editor
+# ============================================================
+.vscode/
+.idea/
+*.suo
+*.user
